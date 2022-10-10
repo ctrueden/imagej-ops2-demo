@@ -1,16 +1,16 @@
 package net.imagej.ops2demo;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.ServiceLoader;
 import java.util.function.BiFunction;
 
-import net.imagej.Dataset;
-import net.imagej.ImageJ;
 import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImgs;
+import net.imglib2.type.numeric.integer.UnsignedByteType;
 import net.imglib2.type.numeric.real.DoubleType;
 
+import org.scijava.discovery.Discoverer;
 import org.scijava.function.Computers;
 import org.scijava.function.Functions;
 import org.scijava.function.Inplaces;
@@ -20,15 +20,14 @@ import org.scijava.ops.engine.DefaultOpEnvironment;
 import org.scijava.types.Nil;
 
 public class Main {
-	public static void main(String[] args) throws IOException {
-		ImageJ ij = new ImageJ();
-		ij.ui().showUI();
-		Dataset clown = ij.scifio().datasetIO().open("/Users/curtis/data/clown8.tif");
-		ij.ui().show(clown);
+	public static void main(String[] args) {
+		Img<UnsignedByteType> clown = ArrayImgs.unsignedBytes(256, 192);
 
 		double[] sigmas = {20, 5};
 
-		OpEnvironment ops = new DefaultOpEnvironment();
+		//OpEnvironment ops = new DefaultOpEnvironment();
+		OpEnvironment ops = new DefaultOpEnvironment(Discoverer.all(ServiceLoader::load));
+
 
 		List<OpInfo> infosList = new ArrayList<>();
 		for (OpInfo info : ops.infos()) {
@@ -48,10 +47,10 @@ public class Main {
 				.input(clown, sigmas)
 				.apply(); // match AND execute as a function
 
-		// Function: Do the gauss on clown and return the result, as a Dataset.
-		Dataset resultDataset = ops.op("filter.gauss")
+		// Function: Do the gauss on clown and return the result, as an Img.
+		Img resultDataset = ops.op("filter.gauss")
 				.input(clown, sigmas)
-				.outType(Dataset.class) // only match ops whose output is compatible with Dataset
+				.outType(Img.class) // only match ops whose output is compatible with Img
 				.apply(); // match AND execute as a function
 
 		// Function: Do the gauss on clown and return the result, as an Img<DoubleType>.
@@ -61,7 +60,7 @@ public class Main {
 				.apply(); // match AND execute as a function
 
 		// Or match once and then reuse the function many times:
-		BiFunction<Dataset, double[], Img<DoubleType>> gaussOp =
+		BiFunction<Img<UnsignedByteType>, double[], Img<DoubleType>> gaussOp =
 			ops.op("filter.gauss")
 				.input(clown, sigmas)
 				.outType(new Nil<Img<DoubleType>>() {})
@@ -72,27 +71,27 @@ public class Main {
 		}
 
 		// Ternary function instead of binary
-		Functions.Arity3<Dataset, double[], String, Img<DoubleType>> fastGaussOp =
+		Functions.Arity3<Img<UnsignedByteType>, double[], String, Img<DoubleType>> fastGaussOp =
 			ops.op("filter.gauss")
 				.input(clown, sigmas, "fast")
 				.outType(new Nil<Img<DoubleType>>() {})
 				.function();
 
 		// Function: In case I have no actual objects yet, I only know their types
-		BiFunction<Dataset, double[], Img<DoubleType>> sameGaussOpAsBefore =
+		BiFunction<Img<UnsignedByteType>, double[], Img<DoubleType>> sameGaussOpAsBefore =
 			ops.op("filter.gauss")
-					.inType(Dataset.class, double[].class) // I only have the type, not actual object instances
+					.inType(new Nil<Img<UnsignedByteType>>() {}, new Nil<double[]>() {}) // I only have the type, not actual object instances
 					.outType(new Nil<Img<DoubleType>>() {})
 					.function();
 
 		// Computer: Do the gauss on clown and store result into result container.
 		ops.op("filter.gauss").input(clown, sigmas).output(result).compute();
 
-		Computers.Arity2<Dataset, double[], Img<DoubleType>> gaussComputer = ops.op("filter.gauss").input(clown, sigmas).output(result).computer();
+		Computers.Arity2<Img<UnsignedByteType>, double[], Img<DoubleType>> gaussComputer = ops.op("filter.gauss").input(clown, sigmas).output(result).computer();
 
 		// Inplace2_1: Do the gauss on clown inplace
 		ops.op("filter.gauss").input(clown, sigmas).mutate1();
 
-		Inplaces.Arity2_1<Dataset, double[]> inplaceGaussOp = ops.op("filter.gauss").input(clown, sigmas).inplace1();
+		Inplaces.Arity2_1<Img<UnsignedByteType>, double[]> inplaceGaussOp = ops.op("filter.gauss").input(clown, sigmas).inplace1();
 	}
 }
