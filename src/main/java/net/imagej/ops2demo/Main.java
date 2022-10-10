@@ -1,6 +1,8 @@
 package net.imagej.ops2demo;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.BiFunction;
 
 import net.imagej.Dataset;
@@ -12,8 +14,9 @@ import net.imglib2.type.numeric.real.DoubleType;
 import org.scijava.function.Computers;
 import org.scijava.function.Functions;
 import org.scijava.function.Inplaces;
-import org.scijava.ops.api.OpBuilder;
 import org.scijava.ops.api.OpEnvironment;
+import org.scijava.ops.api.OpInfo;
+import org.scijava.ops.engine.DefaultOpEnvironment;
 import org.scijava.types.Nil;
 
 public class Main {
@@ -23,15 +26,22 @@ public class Main {
 		Dataset clown = ij.scifio().datasetIO().open("/Users/curtis/data/clown8.tif");
 		ij.ui().show(clown);
 
-		//DefaultOpEnvironment ops = new DefaultOpEnvironment(); // new DefaultOpEnvironment(null, null, null, null);
-		OpEnvironment ops = null;
 		double[] sigmas = {20, 5};
+
+		OpEnvironment ops = new DefaultOpEnvironment();
+
+		final Iterable<OpInfo> infos = ops.infos();
+		List<OpInfo> infosList = new ArrayList<>();
+		for (OpInfo info : ops.infos()) {
+			infosList.add(info);
+			System.out.println(info);
+		}
+		System.out.println("Found " + infosList.size() + " ops total!");
 
 		// function = apply
 		// computer = compute
 		// inplace = mutate
 
-		Object help = ops.op("help").input().create();
 		Img<DoubleType> result = ArrayImgs.doubles(256, 256);
 
 		// Function: Do the gauss on clown and return the result, agnostic of output type.
