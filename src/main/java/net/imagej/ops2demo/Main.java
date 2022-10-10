@@ -30,7 +30,6 @@ public class Main {
 
 		OpEnvironment ops = new DefaultOpEnvironment();
 
-		final Iterable<OpInfo> infos = ops.infos();
 		List<OpInfo> infosList = new ArrayList<>();
 		for (OpInfo info : ops.infos()) {
 			infosList.add(info);
